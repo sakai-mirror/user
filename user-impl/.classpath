@@ -15,5 +15,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/authz-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/event-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/db-api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/user-util"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
