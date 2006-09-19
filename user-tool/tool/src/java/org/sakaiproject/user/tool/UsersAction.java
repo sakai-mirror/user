@@ -778,6 +778,12 @@ public class UsersAction extends PagedResourceActionII
 				type = (String) state.getAttribute("create-type");
 			}
 		}
+		
+		//insure valid email address
+		if(email != null && !email.matches(".+@.+\\..+")) {
+				addAlert(state, rb.getString("useact.invemail"));	
+				return false;
+		}
 
 		// get the user
 		UserEdit user = (UserEdit) state.getAttribute("user");
