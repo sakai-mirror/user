@@ -52,8 +52,8 @@
  	  <h:outputText value="#{msgs.privacy_stmt_show} " rendered="#{privacyBean.show}" />
  	  <h:outputText value="#{msgs.privacy_stmt_hide} " rendered="#{! privacyBean.show}" />    
  	     
- 	  <h:outputText value="#{msgs.privacy_change_directions}" />
  	  <%--
+ 	  <h:outputText value="#{msgs.privacy_change_directions}" />
  	  <h:outputText value=" #{privacyBean.checkboxText} " />
  	  <h:outputText value="#{msgs.privacy_change_directions2}" />
  	  --%>
