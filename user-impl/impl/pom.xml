@@ -139,6 +139,13 @@
       <version>1.0.2</version>
       <scope>provided</scope>
     </dependency>
+	
+	  <dependency>
+         <groupId>${sakai.ehcache.groupId}</groupId>
+         <artifactId>${sakai.ehcache.artifactId}</artifactId>
+         <version>${sakai.ehcache.version}</version>
+      </dependency>
+	
   </dependencies>
   <build>
     

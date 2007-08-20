@@ -27,6 +27,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.Element;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.sakaiproject.db.api.SqlReader;
@@ -37,6 +40,7 @@ import org.sakaiproject.user.api.UserEdit;
 import org.sakaiproject.util.BaseDbFlatStorage;
 import org.sakaiproject.util.StorageUser;
 import org.sakaiproject.util.StringUtil;
+
 
 /**
  * <p>
@@ -118,6 +122,8 @@ public abstract class DbUserService extends BaseUserDirectoryService
 	{
 		m_autoDdl = new Boolean(value).booleanValue();
 	}
+	
+        protected Cache cache = null;
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Init and Destroy
@@ -179,6 +185,10 @@ public abstract class DbUserService extends BaseUserDirectoryService
 	 */
 	protected class DbStorage extends BaseDbFlatStorage implements Storage, SqlReader
 	{
+		private static final String EIDCACHE = "eid:";
+		private static final String IDCACHE = "id:";
+		private static final String CACHE_NAME = "DbUserService.DbStorage";
+		
 		/** A prior version's storage model. */
 		protected Storage m_oldStorage = null;
 
@@ -476,7 +486,12 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			fields[0] = id;
 			fields[1] = eid;
 
-			return m_sql.dbWrite(statement, fields);
+			if ( m_sql.dbWrite(statement, fields) ) {
+				cache.put(new Element(IDCACHE+eid,id));
+				cache.put(new Element(EIDCACHE+id,eid));
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -504,15 +519,23 @@ public abstract class DbUserService extends BaseUserDirectoryService
 
 			// we have a mapping, is it what we want?
 			if (eidAlready.equals(eid)) return true;
-
+			
+			// update the cache
 			// we have a mapping that needs to be updated
 			String statement = "update SAKAI_USER_ID_MAP set EID=? where USER_ID=?";
+			
+			
 
 			Object fields[] = new Object[2];
 			fields[0] = eid;
 			fields[1] = id;
 
-			return m_sql.dbWrite(statement, fields);
+			if ( m_sql.dbWrite(statement, fields) ) {
+				cache.put(new Element(IDCACHE+eid,id));
+				cache.put(new Element(EIDCACHE+id,eid));
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -525,6 +548,13 @@ public abstract class DbUserService extends BaseUserDirectoryService
 		{
 			// if we are not doing separate id/eid, do nothing
 			if (!m_separateIdEid) return;
+
+			// clear both sides of the cache
+			String eid = checkMapForEid(id);
+			if ( eid != null ) {
+				cache.remove(IDCACHE+eid);
+			}
+			cache.remove(EIDCACHE+id);
 
 			String statement = "delete from SAKAI_USER_ID_MAP where USER_ID=?";
 
@@ -545,7 +575,14 @@ public abstract class DbUserService extends BaseUserDirectoryService
 		{
 			// if we are not doing separate id/eid, return the id
 			if (!m_separateIdEid) return id;
-
+			
+			{
+				Element e = cache.get(EIDCACHE+id);
+				if ( e != null ) {
+					return (String) e.getObjectValue();
+				}
+			}
+			
 			String statement = "select EID from SAKAI_USER_ID_MAP where USER_ID=?";
 			Object fields[] = new Object[1];
 			fields[0] = id;
@@ -554,11 +591,14 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			if (rv.size() > 0)
 			{
 				String eid = (String) rv.get(0);
+				cache.put(new Element(EIDCACHE+id,eid));
 				return eid;
 			}
+			cache.put(new Element(EIDCACHE+id,null));
 
 			return null;
 		}
+
 
 		/**
 		 * Check the id -> eid mapping: lookup this eid and return the id if found
@@ -572,7 +612,15 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			// if we are not doing separate id/eid, do nothing
 			if (!m_separateIdEid) return eid;
 
+			{
+				Element e = cache.get(IDCACHE+eid);
+				if ( e != null ) {
+					return (String) e.getObjectValue();
+				}
+			}
+
 			String statement = "select USER_ID from SAKAI_USER_ID_MAP where EID=?";
+
 			Object fields[] = new Object[1];
 			fields[0] = eid;
 			List rv = sqlService().dbRead(statement, fields, null);
@@ -580,10 +628,30 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			if (rv.size() > 0)
 			{
 				String id = (String) rv.get(0);
+				cache.put(new Element(IDCACHE+eid,id));
 				return id;
 			}
 
+			cache.put(new Element(IDCACHE+eid,null));
 			return null;
 		}
+		
+
+	}
+
+	/**
+	 * @return the cache
+	 */
+	public Cache getCache()
+	{
+		return cache;
+	}
+
+	/**
+	 * @param cache the cache to set
+	 */
+	public void setCache(Cache cache)
+	{
+		this.cache = cache;
 	}
 }
