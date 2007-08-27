@@ -222,7 +222,6 @@ public abstract class DbUserService extends BaseUserDirectoryService
 	{
 		private static final String EIDCACHE = "eid:";
 		private static final String IDCACHE = "id:";
-		private static final String CACHE_NAME = "DbUserService.DbStorage";
 		
 		/** A prior version's storage model. */
 		protected Storage m_oldStorage = null;
@@ -264,13 +263,6 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			UserEdit rv = (UserEdit) super.getResource(id);
 
 			return rv;
-		}
-
-		public List getAll()
-		{
-			// let the db do range selection
-			List all = super.getAllResources();
-			return all;
 		}
 
 		public List getAll(int first, int last)

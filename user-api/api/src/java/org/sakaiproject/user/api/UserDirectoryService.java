@@ -144,44 +144,6 @@ public interface UserDirectoryService extends EntityProducer
 	 * @return true if the user is allowed to update the user, false if not.
 	 */
 	boolean allowUpdateUser(String id);
-	
-	
-	/**
-	 * check permissions for editUser()
-	 * 
-	 * @param id
-	 *        The user id.
-	 * @return true if the user is allowed to update their own first and last names, false if not.
-	 */
-	public boolean allowUpdateUserName(String id);
-	
-	/**
-	 * check permissions for editUser()
-	 * 
-	 * @param id
-	 *        The user id.
-	 * @return true if the user is allowed to update their own email address, false if not.
-	 */
-	public boolean allowUpdateUserEmail(String id);
-	
-	/**
-	 * check permissions for editUser()
-	 * 
-	 * @param id
-	 *        The user id.
-	 * @return true if the user is allowed to update their own password, false if not.
-	 */
-	public boolean allowUpdateUserPassword(String id);
-	
-	/**
-	 * check permissions for editUser()
-	 * 
-	 * @param id
-	 *        The user id.
-	 * @return true if the user is allowed to update their own type, false if not.
-	 */
-	public boolean allowUpdateUserType(String id);
-	
 
 	/**
 	 * Authenticate a user / password.
@@ -312,15 +274,6 @@ public interface UserDirectoryService extends EntityProducer
 	 *            if we don't know anything about the user with this eid.
 	 */
 	String getUserId(String eid) throws UserNotDefinedException;
-
-	/**
-	 * Access all user objects - known to us (not from external providers).
-	 * 
-	 * @return A list of user objects containing each user's information.
-	 * @exception IdUnusedException
-	 *            if not found.
-	 */
-	List getUsers();
 
 	/**
 	 * Access a bunch of user object.
