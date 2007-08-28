@@ -2497,15 +2497,6 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		public UserEdit getById(String id);
 
 		/**
-		 * Get the user with this eid, or null if not found.
-		 * 
-		 * @param eid
-		 *        The user eid.
-		 * @return The user with this eid, or null if not found.
-		 */
-		public UserEdit getByEid(String eid);
-
-		/**
 		 * Get the users with this email, or return empty if none found.
 		 * 
 		 * @param id

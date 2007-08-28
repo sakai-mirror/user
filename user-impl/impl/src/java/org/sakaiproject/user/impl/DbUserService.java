@@ -254,17 +254,6 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			return rv;
 		}
 
-		public UserEdit getByEid(String eid)
-		{
-			// find id from mapping - if not found, we don't have the record
-			String id = checkMapForId(eid);
-			if (id == null) return null;
-
-			UserEdit rv = (UserEdit) super.getResource(id);
-
-			return rv;
-		}
-
 		public List getAll(int first, int last)
 		{
 			// let the db do range selection
