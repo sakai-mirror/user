@@ -603,48 +603,36 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 
 		// see if we've done this already in this thread
 		String ref = userReference(id);
-		UserEdit user = (UserEdit) threadLocalManager().get(ref);
-
-		// if not
+		UserEdit user = getCachedUser(ref);
 		if (user == null)
 		{
-			// check the cache
-			if ((m_callCache != null) && (m_callCache.containsKey(ref)))
+			// find our user record, and use it if we have it
+			user = m_storage.getById(id);
+
+			// let the provider provide if needed
+			if ((user == null) && (m_provider != null))
 			{
-				user = (UserEdit) m_callCache.get(ref);
+				// we need the eid for the provider - if we can't find an eid, we throw UserNotDefinedException
+				String eid = getUserEid(id);
+
+				// make a new edit to hold the provider's info, hoping it will be filled in
+				user = new BaseUserEdit((String) null);
+				((BaseUserEdit) user).m_id = id;
+				((BaseUserEdit) user).m_eid = eid;
+
+				if (!m_provider.getUser(user))
+				{
+					// it was not provided for, so clear back to null
+					user = null;
+
+					// TODO This can only happen if the user used to be defined by the provider but isn't
+					// any longer. Should we distinguish an obsolete user ID from an incorrect user ID?
+				}
 			}
 
-			else
+			if (user != null)
 			{
-				// find our user record, and use it if we have it
-				user = m_storage.getById(id);
-
-				// let the provider provide if needed
-				if ((user == null) && (m_provider != null))
-				{
-					// we need the eid for the provider - if we can't find an eid, we throw UserNotDefinedException
-					String eid = getUserEid(id);
-
-					// make a new edit to hold the provider's info, hoping it will be filled in
-					user = new BaseUserEdit((String) null);
-					((BaseUserEdit) user).m_id = id;
-					((BaseUserEdit) user).m_eid = eid;
-
-					if (!m_provider.getUser(user))
-					{
-						// it was not provided for, so clear back to null
-						user = null;
-					}
-				}
-
-				// if found, save it for later use in this thread
-				if (user != null)
-				{
-					threadLocalManager().set(ref, user);
-
-					// cache
-					if (m_callCache != null) m_callCache.put(ref, user, m_cacheSeconds);
-				}
+				putCachedUser(ref, user);
 			}
 		}
 
@@ -701,50 +689,39 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 
 			// see if we've done this already in this thread
 			String ref = userReference(id);
-			UserEdit user = (UserEdit) threadLocalManager().get(ref);
+			UserEdit user = getCachedUser(ref);
 
 			// if not
 			if (user == null)
 			{
-				// check the cache
-				if ((m_callCache != null) && (m_callCache.containsKey(ref)))
+				// find our user record
+				user = m_storage.getById(id);
+
+				// if we didn't find it locally, collect a list of externals to get
+				if ((user == null) && (m_provider != null))
 				{
-					user = (UserEdit) m_callCache.get(ref);
+					try
+					{
+						// get the eid for this user so we can ask the provider
+						String eid = getUserEid(id);
+
+						// make a new edit to hold the provider's info; the provider will either fill this in, if known, or remove it from the collection
+						BaseUserEdit providerUser = new BaseUserEdit((String) null);
+						providerUser.m_id = id;
+						providerUser.m_eid = eid;
+						fromProvider.add(providerUser);
+					}
+					catch (UserNotDefinedException e)
+					{
+						// this user is not internally defined, and we can't find an eid for it, so we skip it
+						M_log.warn("getUsers: cannot find eid for user id: " + id);
+					}
 				}
 
-				else
+				// if found, save it for later use in this thread
+				if (user != null)
 				{
-					// find our user record
-					user = m_storage.getById(id);
-
-					// if we didn't find it locally, collect a list of externals to get
-					if ((user == null) && (m_provider != null))
-					{
-						try
-						{
-							// get the eid for this user so we can ask the provider
-							String eid = getUserEid(id);
-
-							// make a new edit to hold the provider's info; the provider will either fill this in, if known, or remove it from the collection
-							BaseUserEdit providerUser = new BaseUserEdit((String) null);
-							providerUser.m_id = id;
-							providerUser.m_eid = eid;
-							fromProvider.add(providerUser);
-						}
-						catch (UserNotDefinedException e)
-						{
-							// this user is not internally defined, and we can't find an eid for it, so we skip it
-							M_log.warn("getUsers: cannot find eid for user id: " + id);
-						}
-					}
-
-					// if found, save it for later use in this thread
-					if (user != null)
-					{
-						// cache
-						threadLocalManager().set(ref, user);
-						if (m_callCache != null) m_callCache.put(ref, user, m_cacheSeconds);
-					}
+					putCachedUser(ref, user);
 				}
 			}
 
@@ -763,12 +740,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			// for each User in the collection that was filled in (and not removed) by the provider, cache and return it
 			for (Iterator i = fromProvider.iterator(); i.hasNext();)
 			{
-				User user = (User) i.next();
-
-				// cache, thread and call cache
-				String ref = user.getReference();
-				threadLocalManager().set(ref, user);
-				if (m_callCache != null) m_callCache.put(ref, user, m_cacheSeconds);
+				UserEdit user = (UserEdit) i.next();
+				putCachedUser(user.getReference(), user);
 
 				// add to return
 				rv.add(user);
@@ -1239,8 +1212,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		{
 		}
 		
-		// Remove from ThreadLocal cache.
-		threadLocalManager().set(ref, null);
+		// Remove from cache.
+		removeCachedUser(ref);
 	}
 
 	/**
@@ -1371,7 +1344,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		}
 
 		// if authenticated, get the user record to return - we might already have it
-		User rv = null;
+		UserEdit rv = null;
 		if (authenticated)
 		{
 			rv = user;
@@ -1380,7 +1353,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 				// get a user record - if we don't have a mapping for this eid yet, getUserByEid will make one for us
 				try
 				{
-					rv = getUserByEid(eid);
+					rv = (UserEdit)getUserByEid(eid);
 				}
 				catch (UserNotDefinedException e)
 				{
@@ -1399,7 +1372,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			// cache the user (if we didn't go through the getUserByEid() above, which would have cached it
 			else
 			{
-				if (m_callCache != null) m_callCache.put(userReference(rv.getId()), rv, m_cacheSeconds);
+				putCachedUser(userReference(rv.getId()), rv);
 			}
 		}
 
@@ -1462,6 +1435,28 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		}
 
 		return StringUtil.trimToNull(eid);
+	}
+	
+	protected UserEdit getCachedUser(String ref)
+	{
+		UserEdit user = (UserEdit)threadLocalManager().get(ref);
+		if ((user == null) && (m_callCache != null))
+		{
+			user = (UserEdit)m_callCache.get(ref);
+		}
+		return user;
+	}
+	
+	protected void putCachedUser(String ref, UserEdit user)
+	{
+		threadLocalManager().set(ref, user);
+		if (m_callCache != null) m_callCache.put(ref, user, m_cacheSeconds);
+	}
+	
+	protected void removeCachedUser(String ref)
+	{
+		threadLocalManager().set(ref, null);
+		if (m_callCache != null) m_callCache.remove(ref);
 	}
 
 	/**********************************************************************************************************************************************************************************************************************************************************
