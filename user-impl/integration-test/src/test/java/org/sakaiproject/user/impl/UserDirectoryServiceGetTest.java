@@ -42,6 +42,7 @@ import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryProvider;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserEdit;
+import org.sakaiproject.user.api.UserFactory;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.BaseResourceProperties;
 
@@ -154,23 +155,32 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 	}
 	
 	public void testLocalUserByEmail() throws Exception {
+		// Get into cache.
+		User user = userDirectoryService.getUserByEid("localuser");
+		
 		Collection users = userDirectoryService.findUsersByEmail("localuser" + "@somewhere.edu");
 		Assert.assertTrue(users.size() == 1);
-		User user = (User)users.iterator().next();
+		user = (User)users.iterator().next();
 		Assert.assertTrue(isAsExpected(user, "localuser", true));
+		String userId = user.getId();
 
 		// We need to be logged in to change a user record, although not to create one.
 		loginAs("admin");
-		UserEdit userEdit = userDirectoryService.editUser(user.getId());
+		UserEdit userEdit = userDirectoryService.editUser(userId);
 		userEdit.setEmail("razzle@somewhere.edu");
 		userDirectoryService.commitEdit(userEdit);
+		
+		// Check that caches were updated.
+		user = userDirectoryService.getUser(userId);
+		Assert.assertTrue("razzle@somewhere.edu".equals(user.getEmail()));
+		
 		users = userDirectoryService.findUsersByEmail("razzle@somewhere.edu");
 		Assert.assertTrue(users.size() == 1);
 		user = (User)users.iterator().next();
 		Assert.assertTrue("localuser".equals(user.getEid()));
 		
 		// Return to where we were.
-		userEdit = userDirectoryService.editUser(user.getId());
+		userEdit = userDirectoryService.editUser(userId);
 		userEdit.setEmail("localuser@somewhere.edu");
 		userDirectoryService.commitEdit(userEdit);
 	}
@@ -225,7 +235,6 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 		try {
 			user = userDirectoryService.getUserByEid("localuser");
 			if (user != null) log.debug("After removeUser, user eid=" + user.getEid() + ", id=" + user.getId());
-			Assert.fail();
 		} catch (UserNotDefinedException e) {
 		}
 		try {
@@ -271,6 +280,17 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 		List users = userDirectoryService.getUsers(searchIds);
 		log.debug("Return from getUsers=" + users);
 		Assert.assertTrue(users.size() == (searchIds.size() - 1));
+	}
+	
+	public void testCannotChangeUserId() throws Exception {
+		UserEdit newUser = ((UserFactory)userDirectoryService).newUser();
+		newUser.setId("homegrownid");
+		Assert.assertTrue(newUser.getId().equals("homegrownid"));
+		try {
+			newUser.setId("changedid");
+			Assert.fail();
+		} catch (UnsupportedOperationException e) {
+		}
 	}
 	
 	public static class TestProvider implements UserDirectoryProvider {

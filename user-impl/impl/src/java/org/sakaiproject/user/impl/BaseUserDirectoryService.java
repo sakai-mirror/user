@@ -22,6 +22,7 @@
 package org.sakaiproject.user.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -566,29 +567,52 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		String id = m_storage.checkMapForId(eid);
 		if (id != null) return id;
 
-		// if we don't have an id yet for this eid, and there's a provider that recognizes this eid, allocate an id
-		if (m_provider != null)
+		// Try the provider.
+		UserEdit user = getProvidedUserByEid(id, eid);
+		if (user != null)
 		{
-			// allocate the id to use if this succeeds
-			id = assureUuid(null, eid);
-
-			// make a new edit to hold the provider's info, hoping it will be filled in
-			BaseUserEdit user = new BaseUserEdit((String) null);
-			user.m_id = id;
-			user.m_eid = eid;
-
-			// check with the provider
-			if (m_provider.getUser(user))
-			{
-				// record the id -> eid mapping (could possibly fail if somehow this eid was mapped since our test above)
-				m_storage.putMap(user.getId(), user.getEid());
-
-				return user.getId();
-			}
+			id = user.getId();
+			putCachedUser(userReference(id), user);
+			return id;
 		}
 
 		// not found
 		throw new UserNotDefinedException(eid);
+	}
+	
+	protected UserEdit getProvidedUserByEid(String id, String eid)
+	{
+		if (m_provider != null)
+		{
+			// make a new edit to hold the provider's info, hoping it will be filled in
+			// Since the provider may actually want to fill in the user ID itself,
+			// there's no point in us allocating a new user ID until after it returns.
+			BaseUserEdit user = new BaseUserEdit(id, eid);
+
+			// check with the provider
+			if (m_provider.getUser(user))
+			{
+				ensureMappedIdForProvidedUser(user);
+				return user;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		
+		return null;
+	}
+	
+	protected void ensureMappedIdForProvidedUser(UserEdit providedUser)
+	{
+		String id = providedUser.getId();
+		if (id != null) return;
+		
+		String eid = providedUser.getEid();
+		id = assureUuid(null, eid);
+		m_storage.putMap(id, eid);
+		providedUser.setId(id);
 	}
 
 	/**
@@ -613,23 +637,13 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			if ((user == null) && (m_provider != null))
 			{
 				// we need the eid for the provider - if we can't find an eid, we throw UserNotDefinedException
-				String eid = getUserEid(id);
-
-				// make a new edit to hold the provider's info, hoping it will be filled in
-				user = new BaseUserEdit((String) null);
-				((BaseUserEdit) user).m_id = id;
-				((BaseUserEdit) user).m_eid = eid;
-
-				if (!m_provider.getUser(user))
-				{
-					// it was not provided for, so clear back to null
-					user = null;
-
-					// TODO This can only happen if the user used to be defined by the provider but isn't
-					// any longer. Should we distinguish an obsolete user ID from an incorrect user ID?
+				String eid = m_storage.checkMapForEid(id);
+				if (eid != null) {
+					// TODO Should we distinguish an obsolete user ID from an incorrect user ID?
+					user = getProvidedUserByEid(id, eid);
 				}
 			}
-
+			
 			if (user != null)
 			{
 				putCachedUser(ref, user);
@@ -650,19 +664,30 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	 */
 	public User getUserByEid(String eid) throws UserNotDefinedException
 	{
-		User rv = null;
+		UserEdit user = null;
 
 		// clean up the eid
 		eid = cleanEid(eid);
 		if (eid == null) throw new UserNotDefinedException("null");
+		
+		String id = m_storage.checkMapForId(eid);
+		if (id != null)
+		{
+			user = getCachedUser(userReference(id));
+			if (user != null)
+			{
+				return user;
+			}
+			user = m_storage.getById(id);
+		}
+		if (user == null)
+		{
+			user = getProvidedUserByEid(id, eid);
+			if (user == null) throw new UserNotDefinedException(eid);
+		}
+		putCachedUser(userReference(user.getId()), user);
 
-		// find the user id mapped to this eid and get that record (internally or by provider)
-		String id = getUserId(eid);
-
-		// now we can get by id
-		rv = getUser(id);
-
-		return rv;
+		return user;
 	}
 
 	/**
@@ -671,10 +696,10 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	public List getUsers(Collection ids)
 	{
 		// User objects to return
-		List rv = new Vector();
+		List<UserEdit> rv = new Vector<UserEdit>();
 
 		// a list of User (edits) setup to check with the provider
-		Collection fromProvider = new Vector();
+		Collection<UserEdit> fromProvider = new Vector<UserEdit>();
 
 		// for each requested id
 		for (Iterator i = ids.iterator(); i.hasNext();)
@@ -690,50 +715,36 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			// see if we've done this already in this thread
 			String ref = userReference(id);
 			UserEdit user = getCachedUser(ref);
-
-			// if not
 			if (user == null)
 			{
 				// find our user record
 				user = m_storage.getById(id);
-
-				// if we didn't find it locally, collect a list of externals to get
-				if ((user == null) && (m_provider != null))
-				{
-					try
-					{
-						// get the eid for this user so we can ask the provider
-						String eid = getUserEid(id);
-
-						// make a new edit to hold the provider's info; the provider will either fill this in, if known, or remove it from the collection
-						BaseUserEdit providerUser = new BaseUserEdit((String) null);
-						providerUser.m_id = id;
-						providerUser.m_eid = eid;
-						fromProvider.add(providerUser);
-					}
-					catch (UserNotDefinedException e)
-					{
-						// this user is not internally defined, and we can't find an eid for it, so we skip it
-						M_log.warn("getUsers: cannot find eid for user id: " + id);
-					}
-				}
-
-				// if found, save it for later use in this thread
 				if (user != null)
 				{
 					putCachedUser(ref, user);
 				}
+				else if (m_provider != null)
+				{
+					// get the eid for this user so we can ask the provider
+					String eid = m_storage.checkMapForEid(id);
+					if (eid != null)
+					{
+						// make a new edit to hold the provider's info; the provider will either fill this in, if known, or remove it from the collection
+						fromProvider.add(new BaseUserEdit(id, eid));
+					}
+					else
+					{
+						// this user is not internally defined, and we can't find an eid for it, so we skip it
+						M_log.warn("getUsers: cannot find eid for user id: " + id);							
+					}
+				}
 			}
-
-			// if we found a user for this id, add it to the return
-			if (user != null)
-			{
-				rv.add(user);
-			}
+			// add to return
+			if (user != null) rv.add(user);
 		}
 
 		// check the provider, all at once
-		if ((m_provider != null) && (!fromProvider.isEmpty()))
+		if (!fromProvider.isEmpty())
 		{
 			m_provider.getUsers(fromProvider);
 
@@ -813,7 +824,6 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	 */
 	public UserEdit editUser(String id) throws UserNotDefinedException, UserPermissionException, UserLockedException
 	{
-		
 		// clean up the id
 		id = cleanId(id);
 
@@ -843,15 +853,20 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			function = SECURE_UPDATE_USER_ANY;
 		}
 
-		// check for existance
-		if (!m_storage.check(id))
-		{
-			throw new UserNotDefinedException(id);
-		}
-
 		// ignore the cache - get the user with a lock from the info store
 		UserEdit user = m_storage.edit(id);
-		if (user == null) throw new UserLockedException(id);
+		if (user == null)
+		{
+			// Figure out which exception to throw.
+			if (!m_storage.check(id))
+			{
+				throw new UserNotDefinedException(id);
+			}
+			else
+			{
+				throw new UserLockedException(id);
+			}
+		}
 		
 		if(!locksSucceeded.contains(SECURE_UPDATE_USER_ANY) && !locksSucceeded.contains(SECURE_UPDATE_USER_OWN)) {
 			
@@ -890,14 +905,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		// check for closed edit
 		if (!user.isActiveEdit())
 		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn("commitEdit(): closed UserEdit", e);
-			}
+			M_log.warn("commitEdit(): closed UserEdit", new Exception());
 			return;
 		}
 
@@ -911,12 +919,17 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			((BaseUserEdit) user).closeEdit();
 			throw new UserAlreadyDefinedException(user.getEid());
 		}
+		
+		String ref = user.getReference();
 
 		// track it
-		eventTrackingService().post(eventTrackingService().newEvent(((BaseUserEdit) user).getEvent(), user.getReference(), true));
+		eventTrackingService().post(eventTrackingService().newEvent(((BaseUserEdit) user).getEvent(), ref, true));
 
 		// close the edit object
 		((BaseUserEdit) user).closeEdit();
+		
+		// Update the caches to match any changed data.
+		putCachedUser(ref, user);
 	}
 
 	/**
@@ -982,6 +995,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	/**
 	 * @inheritDoc
 	 */
+	@SuppressWarnings("unchecked")
 	public Collection findUsersByEmail(String email)
 	{
 		// check internal users
@@ -990,49 +1004,33 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		// add in provider users
 		if (m_provider != null)
 		{
+			Collection<BaseUserEdit> providedUserRecords = null;
+
 			// support UDP that has multiple users per email
 			if (m_provider instanceof UsersShareEmailUDP)
 			{
-				Collection udpUsers = ((UsersShareEmailUDP) m_provider).findUsersByEmail(email, this);
-				if (udpUsers != null)
-				{
-					for (Iterator i = udpUsers.iterator(); i.hasNext();)
-					{
-						BaseUserEdit u = (BaseUserEdit) i.next();
-
-						// find the user id mapped to this eid and get that record (internally or by provider)
-						try
-						{
-							// lookup and set the id for this user from the eid set by the provider
-							u.setId(getUserId(u.getEid()));
-							users.add((u));
-						}
-						catch (UserNotDefinedException e)
-						{
-							M_log.warn("findUserByEmail: user returnd by provider not recognized by provider: eid: " + u.getEid());
-						}
-					}
-				}
+				providedUserRecords = ((UsersShareEmailUDP) m_provider).findUsersByEmail(email, this);
 			}
-
-			// check for one
 			else
 			{
 				// make a new edit to hold the provider's info
-				BaseUserEdit edit = new BaseUserEdit((String) null);
+				BaseUserEdit edit = new BaseUserEdit();
 				if (m_provider.findUserByEmail(edit, email))
 				{
-					// find the user id mapped to this eid and get that record (internally or by provider)
-					try
+					providedUserRecords = Arrays.asList(new BaseUserEdit[] {edit});
+				}
+			}
+			
+			if (providedUserRecords != null)
+			{
+				for (BaseUserEdit user : providedUserRecords)
+				{
+					if (user.getId() == null)
 					{
-						// lookup and set the id for this user from the eid set by the provider
-						edit.setId(getUserId(edit.getEid()));
-						users.add((edit));
+						user.setId(m_storage.checkMapForId(user.getEid()));
+						ensureMappedIdForProvidedUser(user);
 					}
-					catch (UserNotDefinedException e)
-					{
-						M_log.warn("findUserByEmail: user returnd by provider not recognized by provider: eid: " + edit.getEid());
-					}
+					users.add(user);
 				}
 			}
 		}
@@ -1176,14 +1174,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		// check for closed edit
 		if (!user.isActiveEdit())
 		{
-			try
-			{
-				throw new Exception();
-			}
-			catch (Exception e)
-			{
-				M_log.warn("removeUser(): closed UserEdit", e);
-			}
+			M_log.warn("removeUser(): closed UserEdit", new Exception());
 			return;
 		}
 
@@ -1218,6 +1209,9 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 
 	/**
 	 * {@inheritDoc}
+	 * TODO This is known to be bad logic. as described in SAK-9854,
+	 * but we've decided to clean up the implementation of the
+	 * current functionality before fixing the functional issues.
 	 */
 	public User authenticate(String eid, String password)
 	{
@@ -1613,7 +1607,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	 */
 	public UserEdit newUser()
 	{
-		return new BaseUserEdit((String) null);
+		return new BaseUserEdit();
 	}
 
 	/**********************************************************************************************************************************************************************************************************************************************************
@@ -1685,20 +1679,16 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		/** If editing the type is restricted **/ 
 		protected boolean m_restrictedType = false;
 		
-
-		
-
-		
-
 		/**
 		 * Construct.
 		 * 
 		 * @param id
 		 *        The user id.
 		 */
-		public BaseUserEdit(String id)
+		public BaseUserEdit(String id, String eid)
 		{
 			m_id = id;
+			m_eid = eid;
 
 			// setup for properties
 			ResourcePropertiesEdit props = new BaseResourcePropertiesEdit();
@@ -1708,6 +1698,16 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			// and not the anon (id == "") user,
 			// add the automatic (live) properties
 			if ((m_id != null) && (m_id.length() > 0)) addLiveProperties(this);
+		}
+		
+		public BaseUserEdit(String id)
+		{
+			this(id, null);
+		}
+
+		public BaseUserEdit()
+		{
+			this(null, null);
 		}
 
 		/**
@@ -1922,7 +1922,6 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		 */
 		public String getId()
 		{
-			if (m_id == null) return "";
 			return m_id;
 		}
 
@@ -1931,7 +1930,6 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		 */
 		public String getEid()
 		{
-			if (m_eid == null) return "";
 			return m_eid;
 		}
 
@@ -2234,6 +2232,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			{
 				m_id = id;
 			}
+			else throw new UnsupportedOperationException("Tried to change user ID from " + m_id + " to " + id);
 		}
 
 		/**
