@@ -148,13 +148,17 @@ public interface UserDirectoryService extends EntityProducer
 	/**
 	 * Authenticate a user / password.
 	 * 
-	 * @param eid
-	 *        The user eid.
+	 * @param loginId
+	 *        The string identifying the user to the authentication system.
+	 *        If authenticated by basic Sakai services, this will be the user
+	 *        record's EID.
+	 *        If authenticated by a provider, it may or may not be equal to
+	 *        the EID.
 	 * @param password
 	 *        The password.
 	 * @return The User object of the authenticated user if successfull, null if not.
 	 */
-	User authenticate(String eid, String password);
+	User authenticate(String loginId, String password);
 
 	/**
 	 * Cancel the changes made to a UserEdit object, and release the lock. The UserEdit is disabled, and not to be used after this call.

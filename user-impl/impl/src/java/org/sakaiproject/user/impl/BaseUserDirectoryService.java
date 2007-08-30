@@ -57,6 +57,7 @@ import org.sakaiproject.time.api.TimeService;
 import org.sakaiproject.tool.api.SessionBindingEvent;
 import org.sakaiproject.tool.api.SessionBindingListener;
 import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.user.api.AuthenticatedUserProvider;
 import org.sakaiproject.user.api.DisplayAdvisorUDP;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserAlreadyDefinedException;
@@ -604,15 +605,24 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		return null;
 	}
 	
-	protected void ensureMappedIdForProvidedUser(UserEdit providedUser)
+	protected void ensureMappedIdForProvidedUser(UserEdit user)
 	{
-		String id = providedUser.getId();
-		if (id != null) return;
-		
-		String eid = providedUser.getEid();
-		id = assureUuid(null, eid);
-		m_storage.putMap(id, eid);
-		providedUser.setId(id);
+		if (user.getId() == null)
+		{
+			String eid = user.getEid();
+			String id = assureUuid(null, eid);
+			m_storage.putMap(id, eid);
+			user.setId(id);
+		}
+	}
+	
+	protected void checkAndEnsureMappedIdForProvidedUser(UserEdit user)
+	{
+		if (user.getId() == null)
+		{
+			user.setId(m_storage.checkMapForId(user.getEid()));
+			ensureMappedIdForProvidedUser(user);
+		}
 	}
 
 	/**
@@ -638,7 +648,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			{
 				// we need the eid for the provider - if we can't find an eid, we throw UserNotDefinedException
 				String eid = m_storage.checkMapForEid(id);
-				if (eid != null) {
+				if (eid != null)
+				{
 					// TODO Should we distinguish an obsolete user ID from an incorrect user ID?
 					user = getProvidedUserByEid(id, eid);
 				}
@@ -1025,11 +1036,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			{
 				for (BaseUserEdit user : providedUserRecords)
 				{
-					if (user.getId() == null)
-					{
-						user.setId(m_storage.checkMapForId(user.getEid()));
-						ensureMappedIdForProvidedUser(user);
-					}
+					checkAndEnsureMappedIdForProvidedUser(user);
 					users.add(user);
 				}
 			}
@@ -1206,171 +1213,88 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		// Remove from cache.
 		removeCachedUser(ref);
 	}
-
-	/**
-	 * {@inheritDoc}
-	 * TODO This is known to be bad logic. as described in SAK-9854,
-	 * but we've decided to clean up the implementation of the
-	 * current functionality before fixing the functional issues.
-	 */
-	public User authenticate(String eid, String password)
+	
+	protected UserEdit getRemotelyAuthenticatedUser(String loginId, String password)
 	{
-		// clean up the eid
-		eid = cleanEid(eid);
-		if (eid == null) return null;
-
-		boolean authenticated = false;
-		boolean newlyCreatedUser = false;
-		boolean authenticatedFromProvider = false;
-
-		// do we have a record for this user?
+		loginId = StringUtil.trimToNull(loginId);
+		if (loginId == null) return null;
 		UserEdit user = null;
-
-		try
+		if (m_provider instanceof AuthenticatedUserProvider)
 		{
-			user = (UserEdit) getUserByEid(eid);
-		}
-		catch (UserNotDefinedException e)
-		{
-			// no internal record defined, we go on...
-		}
-
-		if (user == null)
-		{
-			if (m_provider != null && m_provider.createUserRecord(eid))
-			{
-				try
-				{
-					user = addUser(null, eid);
-					newlyCreatedUser = true;
-				}
-				catch (UserIdInvalidException e)
-				{
-					M_log.debug("authenticate(): eid invalid: " + eid);
-					return null;
-				}
-				catch (UserAlreadyDefinedException e)
-				{
-					M_log.debug("authenticate(): eid used: " + eid);
-					return null;
-				}
-				catch (UserPermissionException e)
-				{
-					M_log.debug("authenticate(): PermissionException for adding user " + eid);
-					return null;
-				}
-			}
-		}
-
-		if (m_provider != null && m_provider.authenticateWithProviderFirst(eid))
-		{
-			// 1. check provider
-			authenticated = m_provider.authenticateUser(eid, user, password);
-			if (authenticated) authenticatedFromProvider = true;
-
-			if (!authenticated && user != null)
-			{
-				// 2. check our user record, if any, if not yet authenticated
-				authenticated = user.checkPassword(password);
-			}
+			// Since the login ID might differ from the EID, the provider is in charge
+			// of filling in user data as well as authenticating the user.
+			user = ((AuthenticatedUserProvider)m_provider).getAuthenticatedUser(loginId, password, this);
 		}
 		else
 		{
-			// 1. check our user record, if any, if not yet authenticated
-			if (user != null)
+			// The old authenticateUser interface is ambiguous due to the lack of a
+			// distinct "AuthenticationProvider":
+			//
+			// 1) If the provider is basically authentication-only, then we should fill
+			// in a (possibly local) user record before passing it on.
+			//
+			// 2) If the provider handles both data provision and authentication, then
+			// we'll be handing it a blank record to fill in.
+			//
+			// Because of this ambiguity, we may end up making two calls to the
+			// provider instead of one.
+			//
+			// Note that this interface does not allow EIDs and login IDs to differ.
+			try
 			{
-				authenticated = user.checkPassword(password);
-			}
-
-			// 2. check our provider, if any, if not yet authenticated
-			if (!authenticated && m_provider != null)
+				user = (UserEdit)getUserByEid(loginId);
+			} catch (UserNotDefinedException e)
 			{
-				authenticated = m_provider.authenticateUser(eid, user, password);
-				if (authenticated) authenticatedFromProvider = true;
+				user = new BaseUserEdit(null, loginId);
 			}
+			boolean authenticated = m_provider.authenticateUser(loginId, user, password);
+			if (!authenticated) user = null;
 		}
-
-		// if we have an active user edit, deal with it
-		if (newlyCreatedUser)
+		if (user != null)
 		{
-			// save if we succeeded with the authentication
-			if (authenticated)
-			{
-				try
-				{
-					commitEdit(user);
-				}
-				catch (UserAlreadyDefinedException e)
-				{
-					M_log.warn("authenticate: exception saving newly created local user record: " + e.toString());
-				}
-			}
-
-			// cancel if not
-			else
-			{
-				cancelEdit(user);
-			}
+			checkAndEnsureMappedIdForProvidedUser(user);
+			putCachedUser(user.getReference(), user);
+			return user;
 		}
-
-		// if not newly created, but we authenticated from the provider (thus have a provider), have a user record already, and the provider wants us to save after, do so
-		else if ((user != null) && authenticated && authenticatedFromProvider && m_provider.updateUserAfterAuthentication())
+		return null;
+	}
+	
+	protected UserEdit getBaseAuthenticatedUser(String eid, String password)
+	{
+		try
 		{
-			// get an edit for this id, and move in the possibly changed by the provider values
-			BaseUserEdit edit = (BaseUserEdit) m_storage.edit(user.getId());
-			if (edit != null)
-			{
-				edit.setAll(user);
-				edit.setEvent(SECURE_UPDATE_USER_ANY);
-
-				if (!m_storage.commit(edit))
-				{
-					m_storage.cancel(edit);
-					edit.closeEdit();
-					M_log.warn("authenticate: exception provider modified user record: id: " + edit.getId() + " eid: "
-							+ edit.getEid());
-				}
-				else
-				{
-					eventTrackingService().post(eventTrackingService().newEvent(edit.getEvent(), user.getReference(), true));
-				}
-			}
-		}
-
-		// if authenticated, get the user record to return - we might already have it
-		UserEdit rv = null;
-		if (authenticated)
+			UserEdit user = (UserEdit)getUserByEid(eid);
+			return user.checkPassword(password) ? user : null;
+		} catch (UserNotDefinedException e)
 		{
-			rv = user;
-			if (rv == null)
-			{
-				// get a user record - if we don't have a mapping for this eid yet, getUserByEid will make one for us
-				try
-				{
-					rv = (UserEdit)getUserByEid(eid);
-				}
-				catch (UserNotDefinedException e)
-				{
-					// we might have authenticated by provider, but don't have proper
-					// user "existance" (i.e. provider existance or internal user records) to let the user in -ggolden
-					M_log.info("authenticate(): attempt by unknown user id: " + eid);
-				}
-				catch (Throwable e)
-				{
-					// we might have authenticated by provider, but don't have proper
-					// user "existance" (i.e. provider existance or internal user records) to let the user in -ggolden
-					M_log.warn("authenticate(): could not getUser() after auth: " + eid + " : " + e);
-				}
-			}
-
-			// cache the user (if we didn't go through the getUserByEid() above, which would have cached it
-			else
-			{
-				putCachedUser(userReference(rv.getId()), rv);
-			}
+			// Give up and possibly pass along to another authentication service.
+			return null;
 		}
+	}
 
-		return rv;
+	/**
+	 * {@inheritDoc}
+	 */
+	public User authenticate(String loginId, String password)
+	{
+		UserEdit user = null;
+		boolean authenticateWithProviderFirst = (m_provider != null) && m_provider.authenticateWithProviderFirst(loginId);
+		
+		if (authenticateWithProviderFirst)
+		{
+			user = getRemotelyAuthenticatedUser(loginId, password);
+			if (user != null) return user;
+		}
+		
+		user = getBaseAuthenticatedUser(loginId, password);
+		if (user != null) return user;
+		
+		if ((m_provider != null) && !authenticateWithProviderFirst)
+		{
+			return getRemotelyAuthenticatedUser(loginId, password);
+		}
+		
+		return null;
 	}
 
 	/**
