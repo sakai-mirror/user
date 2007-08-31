@@ -309,14 +309,6 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 			return !eid.equals("localfromauthn");
 		}
 
-		public boolean createUserRecord(String eid) {
-			throw new UnsupportedOperationException("createUserRecord is legacy cruft, and should not be called at runtime");
-		}
-
-		public void destroyAuthentication() {
-			throw new UnsupportedOperationException("destroyAuthentication is legacy cruft, and should not be called at runtime");
-		}
-
 		public boolean findUserByEmail(UserEdit userEdit, String email) {
 			log.debug("findUserByEmail email=" + email);
 			String[] parts = email.split("@");
@@ -349,17 +341,6 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 					iter.remove();
 				}
 			}
-		}
-
-		/**
-		 * Legacy cruft? No known users.
-		 */
-		public boolean updateUserAfterAuthentication() {
-			return false;
-		}
-
-		public boolean userExists(String eid) {
-			throw new UnsupportedOperationException("userExists is legacy cruft, and should not be called at runtime");
 		}
 		
 	}
