@@ -108,6 +108,9 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	/** A user directory provider. */
 	protected UserDirectoryProvider m_provider = null;
 	
+	/** Component ID used to find the provider if it's not directly injected. */
+	protected String m_providerName = null;
+	
 	/** Key for current service caching of current user */
 	protected final String M_curUserKey = getClass().getName() + ".currentUser";
 
@@ -354,6 +357,10 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	{
 		m_provider = provider;
 	}
+	public void setProviderName(String userDirectoryProviderName)
+	{
+		m_providerName = StringUtil.trimToNull(userDirectoryProviderName);
+	}
 	
 	/** The # seconds to cache gets. 0 disables the cache. */
 	protected int m_cacheSeconds = 0;
@@ -511,9 +518,9 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			functionManager().registerFunction(SECURE_UPDATE_USER_ANY);
 			
 			// if no provider was set, see if we can find one
-			if (m_provider == null)
+			if ((m_provider == null) && (m_providerName != null))
 			{
-				m_provider = (UserDirectoryProvider) ComponentManager.get(UserDirectoryProvider.class.getName());
+				m_provider = (UserDirectoryProvider) ComponentManager.get(m_providerName);
 			}
 
 			M_log.info("init(): provider: " + ((m_provider == null) ? "none" : m_provider.getClass().getName())
