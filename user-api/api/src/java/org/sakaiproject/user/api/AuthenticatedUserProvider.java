@@ -27,7 +27,7 @@ package org.sakaiproject.user.api;
  * allowing the user's authentication login name to differ from the user's
  * enterprise integration ID (EID).
  * 
- * This interface is optimized for institutions which pick up other provided user
+ * This interface is tailored for institutions which pick up other provided user
  * data as a side-effect of authentication. Authentication-only services would be
  * better described through an AuthenticationEidProvider interface.
  */
@@ -35,13 +35,15 @@ public interface AuthenticatedUserProvider {
 	/**
 	 * Authenticate the user based on an ID and password, returning user data.
 	 * 
-	 * @param authenticationId the ID passed to the authentication system, such as a
-	 * 		Kerberos prinicipal name
+	 * @param loginId
+	 *            the ID passed to the authentication system, such as a Kerberos
+	 *            prinicipal name
 	 * @param password
-	 * @param userFactory used to create a user record to be filled with provided data
-	 * @return user data, or null if the user was not authenticated; the user's "id"
-	 * 		field will be null unless the provider retrieved the user record from
-	 *		the Sakai user directory service 
+	 * @param userFactory
+	 *            used to create a user record to be filled with provided data
+	 * @return user data, or null if the user was not authenticated; the user
+	 *         record's "id" field will generally be null so that it can be
+	 *         filled in by the Sakai user directory service
 	 */
-	UserEdit getAuthenticatedUser(String authenticationId, String password, UserFactory userFactory);
+	UserEdit getAuthenticatedUser(String loginId, String password, UserFactory userFactory);
 }

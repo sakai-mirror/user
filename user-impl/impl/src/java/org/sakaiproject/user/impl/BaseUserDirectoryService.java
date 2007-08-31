@@ -107,7 +107,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 
 	/** A user directory provider. */
 	protected UserDirectoryProvider m_provider = null;
-
+	
 	/** Key for current service caching of current user */
 	protected final String M_curUserKey = getClass().getName() + ".currentUser";
 
@@ -354,7 +354,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	{
 		m_provider = provider;
 	}
-
+	
 	/** The # seconds to cache gets. 0 disables the cache. */
 	protected int m_cacheSeconds = 0;
 
@@ -651,6 +651,9 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 				if (eid != null)
 				{
 					// TODO Should we distinguish an obsolete user ID from an incorrect user ID?
+					// An obsolete ID will have an associated EID but that EID won't be known to
+					// the provider any longer.
+					// An incorrect ID is not found at all.
 					user = getProvidedUserByEid(id, eid);
 				}
 			}
@@ -1213,11 +1216,50 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		// Remove from cache.
 		removeCachedUser(ref);
 	}
-	
-	protected UserEdit getRemotelyAuthenticatedUser(String loginId, String password)
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public User authenticate(String loginId, String password)
 	{
 		loginId = StringUtil.trimToNull(loginId);
 		if (loginId == null) return null;
+
+		UserEdit user = null;
+		boolean authenticateWithProviderFirst = (m_provider != null) && m_provider.authenticateWithProviderFirst(loginId);
+		
+		if (authenticateWithProviderFirst)
+		{
+			user = getRemotelyAuthenticatedUser(loginId, password);
+			if (user != null) return user;
+		}
+		
+		user = getBaseAuthenticatedUser(loginId, password);
+		if (user != null) return user;
+		
+		if ((m_provider != null) && !authenticateWithProviderFirst)
+		{
+			return getRemotelyAuthenticatedUser(loginId, password);
+		}
+		
+		return null;
+	}
+	
+	protected UserEdit getBaseAuthenticatedUser(String eid, String password)
+	{
+		try
+		{
+			UserEdit user = (UserEdit)getUserByEid(eid);
+			return user.checkPassword(password) ? user : null;
+		} catch (UserNotDefinedException e)
+		{
+			// Give up and possibly pass along to another authentication service.
+			return null;
+		}
+	}
+	
+	protected UserEdit getRemotelyAuthenticatedUser(String loginId, String password)
+	{
 		UserEdit user = null;
 		if (m_provider instanceof AuthenticatedUserProvider)
 		{
@@ -1245,7 +1287,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 				user = (UserEdit)getUserByEid(loginId);
 			} catch (UserNotDefinedException e)
 			{
-				user = new BaseUserEdit(null, loginId);
+				String eid = cleanEid(loginId);
+				user = new BaseUserEdit(null, eid);
 			}
 			boolean authenticated = m_provider.authenticateUser(loginId, user, password);
 			if (!authenticated) user = null;
@@ -1256,44 +1299,6 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			putCachedUser(user.getReference(), user);
 			return user;
 		}
-		return null;
-	}
-	
-	protected UserEdit getBaseAuthenticatedUser(String eid, String password)
-	{
-		try
-		{
-			UserEdit user = (UserEdit)getUserByEid(eid);
-			return user.checkPassword(password) ? user : null;
-		} catch (UserNotDefinedException e)
-		{
-			// Give up and possibly pass along to another authentication service.
-			return null;
-		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public User authenticate(String loginId, String password)
-	{
-		UserEdit user = null;
-		boolean authenticateWithProviderFirst = (m_provider != null) && m_provider.authenticateWithProviderFirst(loginId);
-		
-		if (authenticateWithProviderFirst)
-		{
-			user = getRemotelyAuthenticatedUser(loginId, password);
-			if (user != null) return user;
-		}
-		
-		user = getBaseAuthenticatedUser(loginId, password);
-		if (user != null) return user;
-		
-		if ((m_provider != null) && !authenticateWithProviderFirst)
-		{
-			return getRemotelyAuthenticatedUser(loginId, password);
-		}
-		
 		return null;
 	}
 
