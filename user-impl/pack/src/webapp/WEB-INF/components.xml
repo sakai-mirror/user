@@ -29,7 +29,7 @@
 		<lookup-method name="timeService" bean="org.sakaiproject.time.api.TimeService" />
 		<lookup-method name="idManager" bean="org.sakaiproject.id.api.IdManager" />
 		
-		<!--  The provider can also be injected directly via "setProvider(UserDirectoryProvider(provider)" -->
+		<!--  The provider can also be injected directly via "setProvider(UserDirectoryProvider provider)" -->
 		<property name="providerName" value="org.sakaiproject.user.api.UserDirectoryProvider"/>
 
  		<property name="autoDdl"><value>${auto.ddl}</value></property>
