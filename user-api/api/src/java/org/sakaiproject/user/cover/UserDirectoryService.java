@@ -253,6 +253,9 @@ public class UserDirectoryService
 		return service.authenticate(param0, param1);
 	}
 
+	/**
+	 * @deprecated Unused; will likely be removed from the interface
+	 */
 	public static void destroyAuthentication()
 	{
 		org.sakaiproject.user.api.UserDirectoryService service = getInstance();
