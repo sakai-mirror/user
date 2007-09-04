@@ -282,6 +282,22 @@ public class UserDirectoryServiceGetTest extends SakaiTestBase {
 		Assert.assertTrue(users.size() == (searchIds.size() - 1));
 	}
 	
+	public void testGetUsersThroughEids() throws Exception {
+		List<String> searchEids = new ArrayList<String>(eidToId.keySet());
+		searchEids.add("providedforeidsget");
+		searchEids.add("nosuchuser");
+		Collection<User> users = userDirectoryService.getUsersByEid(searchEids);
+		Assert.assertTrue(users.size() == (searchEids.size() - 1));
+		User newUser = null;
+		for (User user : users) {
+			if (user.getEid().equals("providedforeidsget")) {
+				newUser = user;
+				break;
+			}
+		}
+		Assert.assertTrue(isAsExpected(newUser, "providedforeidsget", false));
+	}
+
 	public void testCannotChangeUserId() throws Exception {
 		UserEdit newUser = ((UserFactory)userDirectoryService).newUser();
 		newUser.setId("homegrownid");

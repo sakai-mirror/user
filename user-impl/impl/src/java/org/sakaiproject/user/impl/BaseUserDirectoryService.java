@@ -765,6 +765,53 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		}
 
 		// check the provider, all at once
+		getProvidedUsers(fromProvider);
+		rv.addAll(fromProvider);
+
+		return rv;
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public Collection<User> getUsersByEid(Collection<String> eids)
+	{
+		List<User> users = new ArrayList<User>();
+		List<UserEdit> fromProvider = new ArrayList<UserEdit>();
+		
+		for (String eid : eids)
+		{
+			UserEdit user = null;
+			String id = m_storage.checkMapForId(eid);
+			if (id != null)
+			{
+				user = getCachedUser(userReference(id));
+				if (user == null)
+				{
+					user = m_storage.getById(id);
+				}
+			}
+			
+			if (user != null)
+			{
+				users.add(user);
+			}
+			else if (m_provider != null)
+			{
+				user = new BaseUserEdit(id, eid);
+				fromProvider.add(user);
+			}
+			
+		}
+		
+		getProvidedUsers(fromProvider);
+		users.addAll(fromProvider);
+		
+		return users;
+	}
+	
+	protected void getProvidedUsers(Collection<UserEdit>fromProvider)
+	{
 		if (!fromProvider.isEmpty())
 		{
 			m_provider.getUsers(fromProvider);
@@ -774,15 +821,10 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			{
 				UserEdit user = (UserEdit) i.next();
 				putCachedUser(user.getReference(), user);
-
-				// add to return
-				rv.add(user);
 			}
 		}
-
-		return rv;
 	}
-
+	
 	/**
 	 * @inheritDoc
 	 */
