@@ -782,6 +782,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		for (String eid : eids)
 		{
 			UserEdit user = null;
+			eid = cleanEid(eid);
+			if (eid == null) continue;
 			String id = m_storage.checkMapForId(eid);
 			if (id != null)
 			{
@@ -820,6 +822,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			for (Iterator i = fromProvider.iterator(); i.hasNext();)
 			{
 				UserEdit user = (UserEdit) i.next();
+				ensureMappedIdForProvidedUser(user);
 				putCachedUser(user.getReference(), user);
 			}
 		}
