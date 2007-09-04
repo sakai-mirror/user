@@ -21,7 +21,10 @@
 
 package org.sakaiproject.user.cover;
 
+import java.util.Collection;
+
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.user.api.User;
 
 /**
  * <p>
@@ -96,6 +99,14 @@ public class UserDirectoryService
 		if (service == null) return null;
 
 		return service.getUsers(param0);
+	}
+
+	public static java.util.Collection<User> getUsersByEid(Collection<String> eids)
+	{
+		org.sakaiproject.user.api.UserDirectoryService service = getInstance();
+		if (service == null) return null;
+
+		return service.getUsersByEid(eids);
 	}
 
 	public static java.util.List getUsers(int param0, int param1)
