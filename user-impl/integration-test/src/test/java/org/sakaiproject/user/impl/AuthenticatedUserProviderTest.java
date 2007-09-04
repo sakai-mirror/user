@@ -81,6 +81,10 @@ public class AuthenticatedUserProviderTest extends SakaiTestBase {
 		// for specific integration tests.
 		DbUserService dbUserService = (DbUserService)getService(UserDirectoryService.class.getName());
 		dbUserService.setProvider(userDirectoryProvider);
+		
+		// Inject service so that provider can create new user records or search
+		// for existing ones.
+		userDirectoryProvider.setUserFactory(dbUserService);
 	}
 
 	public void setUp() throws Exception {
@@ -115,6 +119,7 @@ public class AuthenticatedUserProviderTest extends SakaiTestBase {
 	}
 	
 	public static class TestProvider implements UserDirectoryProvider, AuthenticatedUserProvider {
+		private UserFactory userFactory;
 
 		public boolean authenticateUser(String eid, UserEdit user, String password) {
 			// This should never be called since we implement the new interface.
@@ -137,7 +142,7 @@ public class AuthenticatedUserProviderTest extends SakaiTestBase {
 		public void getUsers(Collection users) {
 		}
 
-		public UserEdit getAuthenticatedUser(String loginId, String password, UserFactory userFactory) {
+		public UserEdit getAuthenticatedUser(String loginId, String password) {
 			log.debug("getAuthenticatedUser " + loginId + ", " + password);
 			if (!loginId.startsWith("LOGINprovide")) return null;
 			String eid = loginId.substring("LOGIN".length());
@@ -148,6 +153,10 @@ public class AuthenticatedUserProviderTest extends SakaiTestBase {
 			} else {
 				return null;
 			}
+		}
+
+		public void setUserFactory(UserFactory userFactory) {
+			this.userFactory = userFactory;
 		}
 	}
 

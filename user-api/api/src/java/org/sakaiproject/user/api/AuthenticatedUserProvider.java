@@ -39,11 +39,9 @@ public interface AuthenticatedUserProvider {
 	 *            the ID passed to the authentication system, such as a Kerberos
 	 *            prinicipal name
 	 * @param password
-	 * @param userFactory
-	 *            used to create a user record to be filled with provided data
 	 * @return user data, or null if the user was not authenticated; the user
 	 *         record's "id" field will generally be null so that it can be
 	 *         filled in by the Sakai user directory service
 	 */
-	UserEdit getAuthenticatedUser(String loginId, String password, UserFactory userFactory);
+	UserEdit getAuthenticatedUser(String loginId, String password);
 }

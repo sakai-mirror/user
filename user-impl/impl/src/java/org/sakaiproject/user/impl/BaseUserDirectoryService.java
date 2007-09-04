@@ -1272,7 +1272,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		{
 			// Since the login ID might differ from the EID, the provider is in charge
 			// of filling in user data as well as authenticating the user.
-			user = ((AuthenticatedUserProvider)m_provider).getAuthenticatedUser(loginId, password, this);
+			user = ((AuthenticatedUserProvider)m_provider).getAuthenticatedUser(loginId, password);
 		}
 		else
 		{
