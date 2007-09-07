@@ -843,6 +843,127 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	/**
 	 * @inheritDoc
 	 */
+	public boolean allowUpdateUserName(String id)
+	{
+		// clean up the id
+		id = cleanId(id);
+		if (id == null) return false;
+		
+		//		 is this the user's own?
+		if (id.equals(sessionManager().getCurrentSessionUserId()))
+		{
+			ArrayList locks = new ArrayList();
+			locks.add(SECURE_UPDATE_USER_OWN);
+			locks.add(SECURE_UPDATE_USER_ANY);
+			locks.add(SECURE_UPDATE_USER_OWN_NAME);
+			
+			
+			// own or any
+			return unlockCheck(locks, userReference(id));
+		}
+
+		else
+		{
+			// just any
+			return unlockCheck(SECURE_UPDATE_USER_ANY, userReference(id));
+		}
+		
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public boolean allowUpdateUserEmail(String id)
+	{
+		// clean up the id
+		id = cleanId(id);
+		if (id == null) return false;
+		
+		//		 is this the user's own?
+		if (id.equals(sessionManager().getCurrentSessionUserId()))
+		{
+			ArrayList locks = new ArrayList();
+			locks.add(SECURE_UPDATE_USER_OWN);
+			locks.add(SECURE_UPDATE_USER_ANY);
+			locks.add(SECURE_UPDATE_USER_OWN_EMAIL);
+			
+			
+			// own or any
+			return unlockCheck(locks, userReference(id));
+		}
+
+		else
+		{
+			// just any
+			return unlockCheck(SECURE_UPDATE_USER_ANY, userReference(id));
+		}
+		
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public boolean allowUpdateUserPassword(String id)
+	{
+		// clean up the id
+		id = cleanId(id);
+		if (id == null) return false;
+		
+		//		 is this the user's own?
+		if (id.equals(sessionManager().getCurrentSessionUserId()))
+		{
+			ArrayList locks = new ArrayList();
+			locks.add(SECURE_UPDATE_USER_OWN);
+			locks.add(SECURE_UPDATE_USER_ANY);
+			locks.add(SECURE_UPDATE_USER_OWN_PASSWORD);
+			
+			
+			// own or any
+			return unlockCheck(locks, userReference(id));
+		}
+
+		else
+		{
+			// just any
+			return unlockCheck(SECURE_UPDATE_USER_ANY, userReference(id));
+		}
+		
+	}
+	
+
+	/**
+	 * @inheritDoc
+	 */
+	public boolean allowUpdateUserType(String id)
+	{
+		// clean up the id
+		id = cleanId(id);
+		if (id == null) return false;
+		
+		//		 is this the user's own?
+		if (id.equals(sessionManager().getCurrentSessionUserId()))
+		{
+			ArrayList locks = new ArrayList();
+			locks.add(SECURE_UPDATE_USER_OWN);
+			locks.add(SECURE_UPDATE_USER_ANY);
+			locks.add(SECURE_UPDATE_USER_OWN_TYPE);
+			
+			
+			// own or any
+			return unlockCheck(locks, userReference(id));
+		}
+
+		else
+		{
+			// just any
+			return unlockCheck(SECURE_UPDATE_USER_ANY, userReference(id));
+		}
+		
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	public UserEdit editUser(String id) throws UserNotDefinedException, UserPermissionException, UserLockedException
 	{
 		// clean up the id
@@ -977,6 +1098,15 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 
 		// close the edit object
 		((BaseUserEdit) user).closeEdit();
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public List getUsers()
+	{
+		List users = m_storage.getAll();
+		return users;
 	}
 
 	/**
@@ -1237,22 +1367,22 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		
 		if (authenticateWithProviderFirst)
 		{
-			user = getRemotelyAuthenticatedUser(loginId, password);
+			user = getProviderAuthenticatedUser(loginId, password);
 			if (user != null) return user;
 		}
 		
-		user = getBaseAuthenticatedUser(loginId, password);
+		user = getInternallyAuthenticatedUser(loginId, password);
 		if (user != null) return user;
 		
 		if ((m_provider != null) && !authenticateWithProviderFirst)
 		{
-			return getRemotelyAuthenticatedUser(loginId, password);
+			return getProviderAuthenticatedUser(loginId, password);
 		}
 		
 		return null;
 	}
 	
-	protected UserEdit getBaseAuthenticatedUser(String eid, String password)
+	protected UserEdit getInternallyAuthenticatedUser(String eid, String password)
 	{
 		try
 		{
@@ -1265,7 +1395,7 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		}
 	}
 	
-	protected UserEdit getRemotelyAuthenticatedUser(String loginId, String password)
+	protected UserEdit getProviderAuthenticatedUser(String loginId, String password)
 	{
 		UserEdit user = null;
 		if (m_provider instanceof AuthenticatedUserProvider)
@@ -2442,6 +2572,13 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 		 * @return The Collection (User) of users with this email, or an empty collection if none found.
 		 */
 		public Collection findUsersByEmail(String email);
+
+		/**
+		 * Get all users.
+		 * 
+		 * @return The List (UserEdit) of all users.
+		 */
+		public List getAll();
 
 		/**
 		 * Get all the users in record range.
