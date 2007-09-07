@@ -291,16 +291,6 @@ public interface UserDirectoryService extends EntityProducer
 	List getUsers(Collection ids);
 
 	/**
-	 * Access user objects which match a collection of enterprise IDs.
-	 * 
-	 * @param eids
-	 *        The user eid strings.
-	 * @return A collection of user objects containing the user information;
-	 *          EIDs which were not found will not have matching user objects in the collection 
-	 */
-	Collection<User> getUsersByEid(Collection<String> eids);
-
-	/**
 	 * Find all the users within the record range given (sorted by sort name).
 	 * 
 	 * @param first
