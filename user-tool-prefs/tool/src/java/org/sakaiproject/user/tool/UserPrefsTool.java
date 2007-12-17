@@ -238,6 +238,15 @@ public class UserPrefsTool
 
 	private String SAKAI_LOCALES = "locales";
 
+	/**
+	 * SAK-11460:  With DTHML More Sites, there are potentially two
+	 * "Customize Tab" pages, namely "tab.jsp" (for the pre-DHTML more
+	 * sites), and "tab-dhtml-moresites.jsp".  Which one is used depends on the
+	 * sakai.properties "portal.use.dhtml.more".  Default is to use
+	 * the pre-DTHML page.
+	 */
+	private String m_TabOutcome = "tab";
+	
 	// //////////////////////////////// PROPERTY GETTER AND SETTER ////////////////////////////////////////////
 	/**
 	 * @return Returns the ResourceLoader value. Note: workaround for <f:selectItem> element, which doesn't like using the <f:loadBundle> map variable
@@ -345,7 +354,40 @@ public class UserPrefsTool
 
 		this.prefOrderItems = prefOrderItems;
 	}
-
+	
+	/**
+	 ** @return number of worksite tabs to display in standard site navigation bar
+	 **/
+	public String getTabCount()
+	{
+		if ( prefTabCount != null )
+			return prefTabCount;
+		
+		Preferences prefs = (PreferencesEdit) m_preferencesService.getPreferences(getUserId());
+		ResourceProperties props = prefs.getProperties(CHARON_PREFS);
+		prefTabCount = props.getProperty("tabs");
+		
+		if ( prefTabCount == null )
+			prefTabCount = DEFAULT_TAB_COUNT; 
+			
+		return prefTabCount;
+	}
+	
+	/**
+	 ** @param count 
+	 **			number of worksite tabs to display in standard site navigation bar
+	 **/
+	public void setTabCount( String count )
+	{
+		if ( count == null || count.trim().equals("") )
+			prefTabCount = DEFAULT_TAB_COUNT; 
+		else
+			prefTabCount = count.trim();
+			
+		if ( Integer.parseInt(prefTabCount) < Integer.parseInt(DEFAULT_TAB_COUNT) )
+			prefTabCount = count;
+	}
+	
 	/**
 	 * @return Returns the prefTimeZones.
 	 */
@@ -634,6 +676,15 @@ public class UserPrefsTool
 	 */
 	public UserPrefsTool()
 	{
+		// Is DTHML more site enabled?
+		if (ServerConfigurationService.getBoolean ("portal.use.dhtml.more", false))
+			m_TabOutcome = "tabDHTMLMoreSites";
+		else
+			m_TabOutcome = "tab";
+	
+		// Set the default tab count to the system property, initially.
+		DEFAULT_TAB_COUNT = ServerConfigurationService.getString ("portal.default.tabs", DEFAULT_TAB_COUNT);
+		
 		LOG.debug("new UserPrefsTool()");
 	}
 
@@ -653,7 +704,7 @@ public class UserPrefsTool
 		{
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(msgs.getString("add_to_sites_msg")));
-			return "tab";
+			return m_TabOutcome;
 		}
 
 		for (int i = 0; i < values.length; i++)
@@ -661,7 +712,7 @@ public class UserPrefsTool
 			String value = values[i];
 			getPrefOrderItems().add(removeItems(value, getPrefExcludeItems(), ORDER_SITE_LISTS, EXCLUDE_SITE_LISTS));
 		}
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -678,7 +729,7 @@ public class UserPrefsTool
 		{
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(msgs.getString("remove_from_sites_msg")));
-			return "tab";
+			return m_TabOutcome;
 		}
 
 		for (int i = 0; i < values.length; i++)
@@ -686,7 +737,7 @@ public class UserPrefsTool
 			String value = values[i];
 			getPrefExcludeItems().add(removeItems(value, getPrefOrderItems(), EXCLUDE_SITE_LISTS, ORDER_SITE_LISTS));
 		}
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -701,7 +752,7 @@ public class UserPrefsTool
 		getPrefOrderItems().addAll(getPrefExcludeItems());
 		getPrefExcludeItems().clear();
 		tabUpdated = false; // reset successful text message if existing in jsp
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -716,7 +767,7 @@ public class UserPrefsTool
 		getPrefExcludeItems().addAll(getPrefOrderItems());
 		getPrefOrderItems().clear();
 		tabUpdated = false; // reset successful text message if existing in jsp
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -732,7 +783,7 @@ public class UserPrefsTool
 		if (!(selvalues.length == 1))
 		{
 			FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(msgs.getString("move_up_msg")));
-			return "tab";
+			return m_TabOutcome;
 		}
 		int itmPos = 0;
 		SelectItem swapData = null;
@@ -760,7 +811,7 @@ public class UserPrefsTool
 				prefOrderItems.set(itmPos, temp);
 			}
 		}
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -776,7 +827,7 @@ public class UserPrefsTool
 		if (!(values.length == 1))
 		{
 			FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(msgs.getString("move_down_msg")));
-			return "tab";
+			return m_TabOutcome;
 		}
 		SelectItem swapDataSite = null;
 		int elemPos = 0;
@@ -801,7 +852,7 @@ public class UserPrefsTool
 				prefOrderItems.set(elemPos - 1, temp);
 			}
 		}
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -888,7 +939,7 @@ public class UserPrefsTool
 		}
 		// release lock
 		m_preferencesService.cancel(m_edit);
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -941,7 +992,7 @@ public class UserPrefsTool
 		// TODO: hard coding this frame id is fragile, portal dependent, and needs to be fixed -ggolden
 		setRefreshElement("sitenav");
 
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
@@ -957,7 +1008,7 @@ public class UserPrefsTool
 		cancelEdit();
 		// To stay on the same page - load the page data
 		processActionEdit();
-		return "tab";
+		return m_TabOutcome;
 	}
 
 	/**
