@@ -212,6 +212,9 @@ public class UserPrefsTool
 	private List prefTimeZones = new ArrayList();
 
 	private List prefLocales = new ArrayList();
+	
+	private String DEFAULT_TAB_COUNT = "4";
+	private String prefTabCount = null;
 
 	private String[] selectedExcludeItems;
 
