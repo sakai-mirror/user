@@ -46,8 +46,14 @@
 				 	</td>
 				 	
 				 	<td style="text-align: center;">
-				 	  <h:commandButton id="add" value="#{msgs.tab_move_rone}" action="#{UserPrefsTool.processActionAdd}" title="#{msgs.tab_move_inst}"></h:commandButton><br /><h:commandButton id="remove" value="#{msgs.tab_move_lone}" action="#{UserPrefsTool.processActionRemove}" title="#{msgs.tab_move_inst_re}"></h:commandButton><br />
-		         	  <br /><h:commandButton id="addAll" value="#{msgs.tab_move_rall}" action="#{UserPrefsTool.processActionAddAll}" title="#{msgs.tab_move_all_inst}"></h:commandButton><br /><h:commandButton id="removeAll" value="#{msgs.tab_move_lall}" action="#{UserPrefsTool.processActionRemoveAll}" title="#{msgs.tab_move_all_inst_re}"></h:commandButton>
+				 	  <h:commandLink id="add" action="#{UserPrefsTool.processActionAdd}" title="#{msgs.tab_move_inst}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
+				 	  <br />
+				 	  <h:commandLink id="remove" action="#{UserPrefsTool.processActionRemove}" title="#{msgs.tab_move_inst_re}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
+				 	  <br />
+		         	  <br />
+		         	  <h:commandLink id="addAll" action="#{UserPrefsTool.processActionAddAll}" title="#{msgs.tab_move_all_inst}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
+		         	  <br />
+		         	  <h:commandLink id="removeAll" action="#{UserPrefsTool.processActionRemoveAll}" title="#{msgs.tab_move_all_inst_re}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
 				 	</td>
 				 	
 				 	<td>
@@ -61,9 +67,13 @@
 				      </h:selectManyListbox>
 				 	</td>
 				 	<td>
-				 	  <h:commandLink action="#{UserPrefsTool.processActionMoveUp}" title="#{msgs.tab_move_up}"> <h:graphicImage value="prefs/Up-Arrow.gif"/> </h:commandLink>
+				 	  <h:commandLink id="moveTop" action="#{UserPrefsTool.processActionMoveTop}" title="#{msgs.tab_move_top}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
 		              <br />
-		              <h:commandLink action="#{UserPrefsTool.processActionMoveDown}" title="#{msgs.tab_move_down}"> <h:graphicImage value="prefs/Down-Arrow.gif"/> </h:commandLink>
+				 	  <h:commandLink id="moveUp" action="#{UserPrefsTool.processActionMoveUp}" title="#{msgs.tab_move_up}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
+		              <br />
+				 	  <h:commandLink id="moveDown" action="#{UserPrefsTool.processActionMoveDown}" title="#{msgs.tab_move_down}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
+		              <br />
+		              <h:commandLink id="moveBottom" action="#{UserPrefsTool.processActionMoveBottom}" title="#{msgs.tab_move_bottom}"> <h:graphicImage value="prefs/blank.gif" alt="" /> </h:commandLink>
 				 	</td>    			  
     			  </tr>
 				</table>
