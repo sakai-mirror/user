@@ -41,12 +41,12 @@
 				 	
 				 	<td style="text-align: center;">
 						<div style="margin-bottom:1.5em">
-						  <h:commandLink id="remove" action="#{UserPrefsTool.processActionRemove}" title="#{msgs.tab_move_inst_re}"><h:graphicImage value="prefs/to-left.png" alt="" /></h:commandLink>
-						  <h:commandLink id="add" action="#{UserPrefsTool.processActionAdd}" title="#{msgs.tab_move_inst}"><h:graphicImage value="prefs/to-right.png" alt="" /></h:commandLink>
+						  <h:commandLink id="remove" action="#{UserPrefsTool.processActionRemove}" title="#{msgs.tab_move_inst_re}"><h:graphicImage value="prefs/to-left.png" alt="#{msgs.tab_move_inst_re}" /></h:commandLink>
+						  <h:commandLink id="add" action="#{UserPrefsTool.processActionAdd}" title="#{msgs.tab_move_inst}"><h:graphicImage value="prefs/to-right.png" alt="#{msgs.tab_move_inst}" /></h:commandLink>
 						</div>
 						<div>
-							<h:commandLink id="removeAll" action="#{UserPrefsTool.processActionRemoveAll}" title="#{msgs.tab_move_all_inst_re}"><h:graphicImage value="prefs/all-to-left.png" alt="" /></h:commandLink>
-							<h:commandLink id="addAll" action="#{UserPrefsTool.processActionAddAll}" title="#{msgs.tab_move_all_inst}"><h:graphicImage value="prefs/all-to-right.png" alt="" /></h:commandLink>
+							<h:commandLink id="removeAll" action="#{UserPrefsTool.processActionRemoveAll}" title="#{msgs.tab_move_all_inst_re}"><h:graphicImage value="prefs/all-to-left.png" alt="#{msgs.tab_move_all_inst_re}" /></h:commandLink>
+							<h:commandLink id="addAll" action="#{UserPrefsTool.processActionAddAll}" title="#{msgs.tab_move_all_inst}"><h:graphicImage value="prefs/all-to-right.png" alt="#{msgs.tab_move_all_inst}" /></h:commandLink>
 						</div>	
 				 	</td>
 				 	
@@ -58,11 +58,11 @@
 				      </h:selectManyListbox>
 				 	</td>
 				 	<td style="width:27px;">
-				 	  <p style="margin:0"><h:commandLink id="moveTop" action="#{UserPrefsTool.processActionMoveTop}" title="#{msgs.tab_move_top}"> <h:graphicImage value="prefs/to-top.png" alt="" /> </h:commandLink></p>
-				 	  <p style="margin:5px 0 0  0;"><h:commandLink id="moveUp" action="#{UserPrefsTool.processActionMoveUp}" title="#{msgs.tab_move_up}"> <h:graphicImage value="prefs/up.png" alt="" /> </h:commandLink></p>
+				 	  <p style="margin:0"><h:commandLink id="moveTop" action="#{UserPrefsTool.processActionMoveTop}" title="#{msgs.tab_move_top}"> <h:graphicImage value="prefs/to-top.png" alt="#{msgs.tab_move_top}" /> </h:commandLink></p>
+				 	  <p style="margin:5px 0 0  0;"><h:commandLink id="moveUp" action="#{UserPrefsTool.processActionMoveUp}" title="#{msgs.tab_move_up}"> <h:graphicImage value="prefs/up.png" alt="#{msgs.tab_move_up}" /> </h:commandLink></p>
 					  <div style="margin-top:15px">
-				 	  	<p style="margin:0 0 5px 0;"><h:commandLink id="moveDown" action="#{UserPrefsTool.processActionMoveDown}" title="#{msgs.tab_move_down}"> <h:graphicImage value="prefs/down.png" alt="" /> </h:commandLink></p>
-						<p style="margin:0;"><h:commandLink id="moveBottom" action="#{UserPrefsTool.processActionMoveBottom}" title="#{msgs.tab_move_bottom}"> <h:graphicImage value="prefs/to-bottom.png" alt="" /> </h:commandLink></p>
+				 	  	<p style="margin:0 0 5px 0;"><h:commandLink id="moveDown" action="#{UserPrefsTool.processActionMoveDown}" title="#{msgs.tab_move_down}"> <h:graphicImage value="prefs/down.png" alt="#{msgs.tab_move_down}" /> </h:commandLink></p>
+						<p style="margin:0;"><h:commandLink id="moveBottom" action="#{UserPrefsTool.processActionMoveBottom}" title="#{msgs.tab_move_bottom}"> <h:graphicImage value="prefs/to-bottom.png" alt="#{msgs.tab_move_bottom}" /> </h:commandLink></p>
 						</div>	
 				 	</td>    			  
     			  </tr>
