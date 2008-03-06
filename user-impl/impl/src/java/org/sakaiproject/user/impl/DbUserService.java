@@ -457,7 +457,8 @@ public abstract class DbUserService extends BaseUserDirectoryService
 						int colCount = meta.getColumnCount();
 						if(colCount < 11)
 						{
-							M_log.error("Error in DbUserService.readSqlResultRecord: total column less than 11!");
+							IllegalStateException ise = new IllegalStateException("Error in DbUserService.readSqlResultRecord: total column less than 11!");
+							M_log.error(ise.getMessage(), ise);
 							return null;
 						}
 					}
