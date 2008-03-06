@@ -22,6 +22,8 @@
 package org.sakaiproject.user.impl;
 
 import java.sql.ResultSet;
+//ONC-341
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -444,6 +446,27 @@ public abstract class DbUserService extends BaseUserDirectoryService
 		 */
 		public Object readSqlResultRecord(ResultSet result)
 		{
+			//ONC-341
+			if(result != null)
+			{
+				try
+				{
+					ResultSetMetaData meta = result.getMetaData();
+					if(meta != null)
+					{
+						int colCount = meta.getColumnCount();
+						if(colCount < 11)
+						{
+							M_log.error("Error in DbUserService.readSqlResultRecord: total column less than 11!");
+							return null;
+						}
+					}
+				}
+				catch(SQLException e)
+				{
+					M_log.error("Error in DbUserService.readSqlResultRecord:" + e.getMessage(), e);
+				}
+			}
 			try
 			{
 				String id = result.getString(1);
@@ -470,7 +493,8 @@ public abstract class DbUserService extends BaseUserDirectoryService
 			}
 			catch (SQLException e)
 			{
-				M_log.warn("readSqlResultRecord: " + e);
+				//ONC-341
+				M_log.warn("readSqlResultRecord: " + e, e);
 				return null;
 			}
 		}
