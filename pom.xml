@@ -27,7 +27,7 @@
     <module>user-impl/pack</module>
     <module>user-tool/tool</module>
     <module>user-util/util</module>
-  </modules>
+   </modules>
  </profile>
 
  <profile>
@@ -44,7 +44,8 @@
     <module>user-tool-admin-prefs/admin-prefs</module>
     <module>user-tool-prefs/tool</module>
     <module>user-util/util</module>
-  </modules>
+    <module>sakaiperson</module>
+</modules>
  </profile>
  </profiles>
 </project>
