@@ -1,0 +1,18 @@
+<projectDescription>
+  <name>sakai-user-util</name>
+  <comment/>
+  <projects>
+    <project>sakai-component-api</project>
+    <project>sakai-entity-api</project>
+    <project>sakai-event-api</project>
+    <project>sakai-user-api</project>
+  </projects>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+  </natures>
+</projectDescription>
