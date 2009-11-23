@@ -3,14 +3,7 @@
   <comment/>
   <projects>
     <project>sakai-announcement-api</project>
-    <project>sakai-depend-jsf-widgets-sun</project>
-    <project>sakai-jsf-app</project>
-    <project>sakai-jsf-sun-ri-tool</project>
-    <project>sakai-jsf-tool</project>
-    <project>sakai-jsf-widgets</project>
-    <project>sakai-jsf-widgets-sun</project>
     <project>sakai-mailarchive-api</project>
-    <project>sakai-privacy-api</project>
     <project>sakai-syllabus-api</project>
   </projects>
   <buildSpec>
