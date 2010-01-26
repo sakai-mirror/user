@@ -1,0 +1,24 @@
+<projectDescription>
+  <name>sakai-user-tool-admin-prefs</name>
+  <comment/>
+  <projects>
+    <project>sakai-depend-jsf-widgets-sun</project>
+    <project>sakai-entity-api</project>
+    <project>sakai-jsf-app</project>
+    <project>sakai-jsf-tool</project>
+    <project>sakai-jsf-widgets</project>
+    <project>sakai-jsf-widgets-sun</project>
+    <project>sakai-tool-api</project>
+    <project>sakai-user-api</project>
+    <project>sakai-util</project>
+    <project>sakai-util-api</project>
+  </projects>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+  </natures>
+</projectDescription>
