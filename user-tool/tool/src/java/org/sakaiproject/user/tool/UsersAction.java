@@ -22,6 +22,7 @@
 package org.sakaiproject.user.tool;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -238,6 +239,15 @@ public class UsersAction extends PagedResourceActionII
 		int endNumber = pageSize * currentPageNubmer;
 
 		int totalNumber = 0;
+		Object[] params;
+		ArrayList list = new ArrayList();
+		list.add(new Integer[]{Integer.valueOf(5)});
+		list.add(new Integer[]{Integer.valueOf(10)});
+		list.add(new Integer[]{Integer.valueOf(20)});
+		list.add(new Integer[]{Integer.valueOf(50)});
+		list.add(new Integer[]{Integer.valueOf(100)});
+		list.add(new Integer[]{Integer.valueOf(200)});
+
 		try
 		{
 			totalNumber = Integer.valueOf(state.getAttribute(STATE_NUM_MESSAGES).toString()).intValue();
@@ -247,9 +257,13 @@ public class UsersAction extends PagedResourceActionII
 
 		if (totalNumber < endNumber) endNumber = totalNumber;
 
+		params = new Object[]{startNumber, endNumber, totalNumber};
+
 		context.put("startNumber", Integer.valueOf(startNumber));
 		context.put("endNumber", Integer.valueOf(endNumber));
 		context.put("totalNumber", Integer.valueOf(totalNumber));
+		context.put("params", params);
+		context.put("list", list);
 		pagingInfoToContext(state, context);
 
 		// add the search commands
@@ -438,7 +452,8 @@ public class UsersAction extends PagedResourceActionII
 		{
 			Log.warn("chef", "UsersAction.doEdit: user not found: " + id);
 
-			addAlert(state, rb.getString("useact.use") + " " + id + " " + rb.getString("useact.notfou"));
+			Object[] params = new Object[]{id};
+			addAlert(state, rb.getFormattedMessage("useact.use_notfou", params));
 			state.removeAttribute("mode");
 
 			// make sure auto-updates are enabled
@@ -502,7 +517,8 @@ public class UsersAction extends PagedResourceActionII
 		{
 			Log.warn("chef", "UsersAction.doEdit: user not found: " + id);
 
-			addAlert(state, rb.getString("useact.use") + " " + id + " " + rb.getString("useact.notfou"));
+			Object[] params = new Object[]{id};
+			addAlert(state, rb.getFormattedMessage("useact.use_notfou", params));
 			state.removeAttribute("mode");
 
 			// make sure auto-updates are enabled
@@ -556,7 +572,8 @@ public class UsersAction extends PagedResourceActionII
 		{
 			Log.warn("chef", "UsersAction.doEdit: user not found: " + id);
 
-			addAlert(state, rb.getString("useact.use") + " " + id + " " + rb.getString("useact.notfou"));
+			Object[] params = new Object[]{id};
+			addAlert(state, rb.getFormattedMessage("useact.use_notfou", params));
 			state.removeAttribute("mode");
 
 			// make sure auto-updates are enabled
@@ -906,7 +923,8 @@ public class UsersAction extends PagedResourceActionII
 				}
 				catch (UserNotDefinedException e)
 				{
-					addAlert(state, rb.getString("useact.use") + " " + user.getId() + " " + rb.getString("useact.notfou"));
+					Object[] params = new Object[]{id};
+					addAlert(state, rb.getFormattedMessage("useact.use_notfou", params));
 					
 					return false;
 				}
