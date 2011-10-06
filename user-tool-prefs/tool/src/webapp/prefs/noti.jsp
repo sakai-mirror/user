@@ -101,6 +101,22 @@
     			<f:selectItem itemValue="1" itemLabel="#{UserPrefsTool.msgNotiMail1}"/>
   			</h:selectOneRadio>
         	</fieldset>
+  			
+  			<fieldset><legend><h:outputText value="#{msgs.noti_matrix}"/></legend>
+				<h:selectOneRadio value="#{UserPrefsTool.selectedMatrixItem}" layout="pageDirection" styleClass="indnt2">
+    			<f:selectItem itemValue="3" itemLabel="#{UserPrefsTool.msgNotiMatrix3}"/>
+    			<f:selectItem itemValue="2" itemLabel="#{UserPrefsTool.msgNotiMatrix2}"/>
+    			<f:selectItem itemValue="1" itemLabel="#{UserPrefsTool.msgNotiMatrix1}"/>
+  			</h:selectOneRadio>
+        	</fieldset>
+  			
+  			<fieldset><legend><h:outputText value="#{msgs.noti_wizard}"/></legend>
+				<h:selectOneRadio value="#{UserPrefsTool.selectedWizardItem}" layout="pageDirection" styleClass="indnt2">
+    			<f:selectItem itemValue="3" itemLabel="#{UserPrefsTool.msgNotiWizard3}"/>
+    			<f:selectItem itemValue="2" itemLabel="#{UserPrefsTool.msgNotiWizard2}"/>
+    			<f:selectItem itemValue="1" itemLabel="#{UserPrefsTool.msgNotiWizard1}"/>
+  			</h:selectOneRadio>
+        	</fieldset>
 			</f:subview>
   				
 				<p class="act">

@@ -333,6 +333,36 @@ public class UserPrefsTool
 		return msgs.getString("noti_syll_3");
 	}
 
+	public String getMsgNotiMatrix1()
+	{
+		return msgs.getString("noti_matrix_1");
+	}
+
+	public String getMsgNotiMatrix2()
+	{
+		return msgs.getString("noti_matrix_2");
+	}
+
+	public String getMsgNotiMatrix3()
+	{
+		return msgs.getString("noti_matrix_3");
+	}
+
+	public String getMsgNotiWizard1()
+	{
+		return msgs.getString("noti_wizard_1");
+	}
+
+	public String getMsgNotiWizard2()
+	{
+		return msgs.getString("noti_wizard_2");
+	}
+
+	public String getMsgNotiWizard3()
+	{
+		return msgs.getString("noti_wizard_3");
+	}
+
 	/**
 	 * @return Returns the prefExcludeItems.
 	 */
@@ -1433,6 +1463,10 @@ public class UserPrefsTool
 
 	private String selectedSyllItem = "";
 
+	private String selectedMatrixItem = "";
+
+	private String selectedWizardItem = "";
+
 	protected boolean notiUpdated = false;
 
 	protected boolean tzUpdated = false;
@@ -1584,6 +1618,80 @@ public class UserPrefsTool
 	}
 
 	/**
+	 * @return Returns the selectedMatrixItem.
+	 */
+	public String getSelectedMatrixItem()
+	{
+		LOG.debug("getSelectedMatrixItem()");
+
+		if (!hasValue(selectedMatrixItem))
+		{
+			Preferences prefs = (PreferencesEdit) m_preferencesService.getPreferences(getUserId());
+			String a = buildTypePrefsContext("sakai:matrix", "matrix", selectedMatrixItem, prefs);
+			if (hasValue(a))
+			{
+				selectedMatrixItem = a; // load from saved data
+			}
+			else
+			{
+				selectedMatrixItem = "3"; // default setting
+			}
+		}
+		return selectedMatrixItem;
+	}
+
+	/**
+	 * @param selectedMatrixItem
+	 *        The selectedMatrixItem to set.
+	 */
+	public void setSelectedMatrixItem(String selectedMatrixItem)
+	{
+		if (LOG.isDebugEnabled())
+		{
+			LOG.debug("setSelectedMatrixItem(String " + selectedMatrixItem + ")");
+		}
+
+		this.selectedMatrixItem = selectedMatrixItem;
+	}
+
+	/**
+	 * @return Returns the selectedWizardItem.
+	 */
+	public String getSelectedWizardItem()
+	{
+		LOG.debug("getSelectedWizardItem()");
+
+		if (!hasValue(selectedWizardItem))
+		{
+			Preferences prefs = (PreferencesEdit) m_preferencesService.getPreferences(getUserId());
+			String a = buildTypePrefsContext("sakai:wizard", "wizard", selectedWizardItem, prefs);
+			if (hasValue(a))
+			{
+				selectedWizardItem = a; // load from saved data
+			}
+			else
+			{
+				selectedWizardItem = "3"; // default setting
+			}
+		}
+		return selectedWizardItem;
+	}
+
+	/**
+	 * @param selectedWizardItem
+	 *        The selectedWizardItem to set.
+	 */
+	public void setSelectedWizardItem(String selectedWizardItem)
+	{
+		if (LOG.isDebugEnabled())
+		{
+			LOG.debug("setSelectedWizardItem(String " + selectedWizardItem + ")");
+		}
+
+		this.selectedWizardItem = selectedWizardItem;
+	}
+
+	/**
 	 * @return Returns the notiUpdated.
 	 */
 	public boolean getNotiUpdated()
@@ -1653,6 +1761,8 @@ public class UserPrefsTool
 			readTypePrefs(MailArchiveService.APPLICATION_ID, "mail", m_edit, getSelectedMailItem());
 			readTypePrefs(ContentHostingService.APPLICATION_ID, "rsrc", m_edit, getSelectedRsrcItem());
 			readTypePrefs(SyllabusService.APPLICATION_ID, "syll", m_edit, getSelectedSyllItem());
+			readTypePrefs("sakai:matrix", "matrix", m_edit, getSelectedMatrixItem());
+			readTypePrefs("sakai:wizard", "wizard", m_edit, getSelectedWizardItem());
 
 			// update the edit and release it
 			m_preferencesService.commit(m_edit);
@@ -1771,6 +1881,8 @@ public class UserPrefsTool
 		selectedMailItem = "";
 		selectedRsrcItem = "";
 		selectedSyllItem = "";
+		selectedMatrixItem = "";
+		selectedWizardItem = "";
 		notiUpdated = false;
 		Preferences prefs = (PreferencesEdit) m_preferencesService.getPreferences(getUserId());
 		String a = buildTypePrefsContext(AnnouncementService.APPLICATION_ID, "annc", selectedAnnItem, prefs);
@@ -1809,6 +1921,24 @@ public class UserPrefsTool
 		else
 		{
 			selectedSyllItem = "3"; // default setting
+		}
+		String mat = buildTypePrefsContext("sakai:matrix", "matrix", selectedMatrixItem, prefs);
+		if (hasValue(mat))
+		{
+			selectedMatrixItem = mat; // load from saved data
+		}
+		else
+		{
+			selectedMatrixItem = "3"; // default setting
+		}
+		String wiz = buildTypePrefsContext("sakai:wizard", "wizard", selectedWizardItem, prefs);
+		if (hasValue(wiz))
+		{
+			selectedWizardItem = wiz; // load from saved data
+		}
+		else
+		{
+			selectedWizardItem = "3"; // default setting
 		}
 	}
 
